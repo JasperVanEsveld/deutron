@@ -8,7 +8,11 @@ Uses std-in/out for communication, allowing it to easily be used by any programm
 
 To create your first application just call `deutron` followed by your backend command.
 ```shell
-deutron your backend
+deutron your backend command
+
+--Examples--
+deutron python ./app.py
+deutron deno ./app.ts
 ```
 
 This will create an executable that includes all files in the current directry.
@@ -16,7 +20,7 @@ If your backend relies on a runtime, you could add the runtime to the directory 
 
 For quicker iterations during development you can use `--debug`, which skips creating an executable and directly runs instead.
 ```shell
-deutron --debug your backend
+deutron --debug your backend command
 ```
 Your backend can create a window with a simple log statement:
 ```ts
