@@ -3,12 +3,6 @@
 Command line tool thats adds a webview UI to your programs.
 Uses std-in/out for communication, allowing it to easily be used by any programming language that can print and read user input.
 
-Libraries simply map these message to functions, missing 
-Helper libraries:
-
-Currently only Deno has a helper library that is around 200 lines.
-Contributions that add other languages are always welcome.
-
 ## Usage
 
 
