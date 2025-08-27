@@ -1,0 +1,169 @@
+permissions:
+    contents: write
+name: Continuous Integration
+
+on:
+    push:
+        branches: ["main"]
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    tag:
+        runs-on: ubuntu-latest
+        outputs:
+            tag: ${{ steps.tag_step.outputs.tag }}
+        steps:
+            - uses: actions/checkout@v2
+            - uses: christophebedard/tag-version-commit@v1
+              id: tag_step
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  version_regex: 'Version: ([0-9]+\.[0-9]+\.[0-9]+)'
+
+    build-runtime:
+        needs: tag
+        if: needs.tag.outputs.tag != ''
+        name: Build runtime - ${{ matrix.name }}
+        strategy:
+            matrix:
+                include:
+                    - name: linux
+                      runs-on: ubuntu-latest
+                      target: x86_64-unknown-linux-gnu
+
+                    - name: windows
+                      runs-on: windows-latest
+                      target: x86_64-pc-windows-msvc
+
+                    - name: macos
+                      runs-on: macOS-latest
+                      target: x86_64-apple-darwin
+
+        runs-on: ${{ matrix.runs-on }}
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install Packages
+              if: matrix.name == 'linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+            - name: Install Rust
+              run: |
+                  rustup install stable
+                  rustup target add ${{ matrix.target }}
+            - name: Build
+              run: |
+                  cargo build --release --bin runtime --target=${{ matrix.target }}
+
+            - name: Rename Binary
+              if: matrix.name != 'windows'
+              run: mv target/${{ matrix.target }}/release/runtime runtime-${{ matrix.name }}
+            - name: Rename Binary
+              if: matrix.name == 'windows'
+              run: mv target/${{ matrix.target }}/release/runtime.exe runtime-${{ matrix.name }}.exe
+
+            - name: Upload Runtime
+              if: matrix.name != 'windows'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: runtime-${{ matrix.name }}
+                  path: |
+                      runtime-${{ matrix.name }}
+            - name: Upload Runtime
+              if: matrix.name == 'windows'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: runtime-${{ matrix.name }}
+                  path: |
+                      runtime-${{ matrix.name }}.exe
+
+    build-deutron:
+        needs: build-runtime
+        name: Build deutron - ${{ matrix.name }}
+        strategy:
+            matrix:
+                include:
+                    - name: linux
+                      runs-on: ubuntu-latest
+                      target: x86_64-unknown-linux-gnu
+
+                    - name: windows
+                      runs-on: windows-latest
+                      target: x86_64-pc-windows-msvc
+
+                    - name: macos
+                      runs-on: macOS-latest
+                      target: x86_64-apple-darwin
+
+        runs-on: ${{ matrix.runs-on }}
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Download Artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: ./runtimes
+                  merge-multiple: true
+            - name: List
+              run: ls ./runtimes
+
+            - name: Install Packages
+              if: matrix.name == 'linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+            - name: Install Rust
+              run: |
+                  rustup install stable
+                  rustup target add ${{ matrix.target }}
+            - name: Build
+              run: |
+                  cargo build --release --bin deutron --target=${{ matrix.target }}
+
+            - name: Rename Binary
+              if: matrix.name != 'windows'
+              run: mv target/${{ matrix.target }}/release/deutron deutron-${{ matrix.name }}
+            - name: Rename Binary
+              if: matrix.name == 'windows'
+              run: mv target/${{ matrix.target }}/release/deutron.exe deutron-${{ matrix.name }}.exe
+
+            - name: Upload Deutron
+              if: matrix.name != 'windows'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deutron-${{ matrix.name }}
+                  path: |
+                      deutron-${{ matrix.name }}
+            - name: Upload Deutron
+              if: matrix.name == 'windows'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deutron-${{ matrix.name }}.exe
+                  path: |
+                      deutron-${{ matrix.name }}.exe
+
+    release:
+        needs: [build-deutron, tag]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download Artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: ./deutron
+                  merge-multiple: true
+
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{needs.tag.outputs.tag}}
+                  files: |
+                      ./deutron/deutron-linux
+                      ./deutron/deutron-windows.exe
+                      ./deutron/deutron-macos
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

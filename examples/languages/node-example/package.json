@@ -1,0 +1,13 @@
+{
+    "name": "deutron-example",
+    "version": "1.0.0",
+    "description": "",
+    "main": "backend.js",
+    "type": "module",
+    "scripts": {
+        "start": "deutron --debug node ./app.js",
+        "compile": "deutron node ./app.js"
+    },
+    "author": "",
+    "license": "ISC"
+}

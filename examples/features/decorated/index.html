@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Decoration Example</title>
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+        />
+        <style>
+            .window-control {
+                cursor: pointer;
+                font-weight: bold;
+                text-align: center;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 1rem;
+                padding: 0.5rem;
+                color: var(--pico-muted-border-color);
+            }
+            .window-control:hover {
+                color: var(--pico-secondary-inverse);
+                background: var(--pico-secondary-hover-background);
+            }
+            .close:hover {
+                color: var(--pico-secondary-inverse);
+                background: var(
+                    --pico-form-element-invalid-active-border-color
+                );
+            }
+        </style>
+    </head>
+    <body style="height: 100vh; place-content: center">
+        <div
+            style="
+                position: fixed;
+                top: 0px;
+                width: 100%;
+                background-color: var(--pico-secondary-background);
+            "
+            class="drag-region"
+        >
+            <div style="display: flex; float: right">
+                <div class="window-control" onclick="deutron.minimize()">−</div>
+                <div class="window-control" onclick="deutron.maximize();">
+                    ☐
+                </div>
+                <div class="window-control close" onclick="deutron.close()">
+                    ✕
+                </div>
+            </div>
+        </div>
+        <main class="container" style="text-align: center">
+            This window uses custom window decorations!
+        </main>
+    </body>
+</html>

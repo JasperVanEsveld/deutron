@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Python Example</title>
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+        />
+    </head>
+    <body style="height: 100vh; place-content: center">
+        <main class="container" style="text-align: center">
+            <section>
+                <form role="group" onsubmit="sendMessage(); return false">
+                    <input
+                        autocomplete="off"
+                        id="message"
+                        placeholder="Enter your message"
+                    />
+                    <button id="send" value="Send">Send</button>
+                </form>
+                <span id="parent">--Nothing received yet--</span>
+            </section>
+        </main>
+        <script>
+            function sendMessage() {
+                const message = document.getElementById("message").value;
+                deutron.messageBackend(message);
+            }
+            deutron.onMessage((event) => {
+                document.getElementById("parent").textContent = event.data;
+            });
+
+            deutron.onInfo((event) => {
+                console.log(event);
+            });
+        </script>
+    </body>
+</html>
