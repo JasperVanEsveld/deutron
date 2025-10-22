@@ -5,7 +5,7 @@ use crate::temp::get_temp_dir;
 use crate::{app::App, state::State};
 use clap::{command, Parser};
 use serde::{Deserialize, Serialize};
-use std::{env, path::PathBuf, sync::Mutex};
+use std::{env, path::PathBuf};
 
 #[macro_use]
 mod macros;
@@ -66,7 +66,7 @@ fn start() -> Result<State, EmbedError> {
     if verbose {
         println!("Starting: {}", command.join(" "));
     }
-    let mut backend = Backend::new(command.clone(), &backend_dir);
+    let backend = Backend::new(command.clone(), &backend_dir);
 
     Ok(State {
         verbose,
@@ -74,9 +74,6 @@ fn start() -> Result<State, EmbedError> {
         icon: backend_dir.join("favicon.ico"),
         backend_dir,
         webview_dir,
-        backend_in: Mutex::new(backend.get_stdin()),
-        backend_out: Mutex::new(backend.get_stdout()),
-        backend_err: Mutex::new(backend.get_stderr()),
-        backend: Mutex::new(backend),
+        backend,
     })
 }

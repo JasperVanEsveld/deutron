@@ -3,10 +3,16 @@ use std::os::windows::process::CommandExt;
 
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
-use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::{ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
+use std::sync::mpsc::Sender;
+use std::sync::{mpsc, Mutex};
+use std::{thread, time};
 
 pub struct Backend {
-    pub process: Child,
+    pub stdin: Mutex<ChildIn>,
+    pub stdout: Mutex<ChildOut>,
+    pub stderr: Mutex<ChildErr>,
+    exit_sender: Sender<i32>,
 }
 
 pub type ChildIn = BufWriter<ChildStdin>;
@@ -16,7 +22,7 @@ pub type ChildErr = BufReader<ChildStderr>;
 impl Backend {
     pub fn new(command: Vec<String>, cwd: &PathBuf) -> Backend {
         #[cfg(windows)]
-        let process = Command::new(&command[0])
+        let mut process = Command::new(&command[0])
             .args(&command[1..])
             .current_dir(cwd)
             .creation_flags(0x08000000)
@@ -35,33 +41,35 @@ impl Backend {
             .spawn()
             .expect("Failed to start the backend");
 
-        Backend { process }
+        let stdin = BufWriter::new(process.stdin.take().expect("Failed to open std input"));
+        let stdout = BufReader::new(process.stdout.take().expect("Failed to open std output"));
+        let stderr = BufReader::new(process.stderr.take().expect("Failed to open std error"));
+
+        let (exit_sender, exit_receive) = mpsc::channel::<i32>();
+        thread::spawn(move || loop {
+            match exit_receive.try_recv() {
+                Ok(_) => {
+                    process.kill().ok().unwrap();
+                }
+                _ => {}
+            };
+            match process.try_wait() {
+                Ok(Some(code)) => {
+                    std::process::exit(*code.code().get_or_insert(0));
+                }
+                _ => {}
+            };
+            std::thread::sleep(time::Duration::from_millis(100));
+        });
+        Backend {
+            stdin: Mutex::new(stdin),
+            stdout: Mutex::new(stdout),
+            stderr: Mutex::new(stderr),
+            exit_sender,
+        }
     }
 
-    pub fn get_stdin(&mut self) -> ChildIn {
-        BufWriter::new(
-            self.process
-                .stdin
-                .take()
-                .expect("Failed to open backend input"),
-        )
-    }
-
-    pub fn get_stdout(&mut self) -> ChildOut {
-        BufReader::new(
-            self.process
-                .stdout
-                .take()
-                .expect("Failed to open backend output"),
-        )
-    }
-
-    pub fn get_stderr(&mut self) -> ChildErr {
-        BufReader::new(
-            self.process
-                .stderr
-                .take()
-                .expect("Failed to open backend error"),
-        )
+    pub fn exit(&self) {
+        self.exit_sender.send(0).unwrap();
     }
 }

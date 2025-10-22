@@ -1,4 +1,3 @@
-use std::sync::Mutex;
 use std::{fs::remove_file, path::PathBuf};
 
 use crate::backend::Backend;
@@ -124,16 +123,13 @@ fn embed(config: Config) -> Result<(), EmbedError> {
 
 fn start() -> Result<State, EmbedError> {
     let config = Config::parse();
-    let mut backend = Backend::new(config.command.clone(), &PathBuf::from(&config.include));
+    let backend = Backend::new(config.command.clone(), &PathBuf::from(&config.include));
     Ok(State {
         verbose: config.verbose,
         dev_tools: config.dev_tools,
         icon: config.include.join("./favicon.ico"),
         backend_dir: config.include,
         webview_dir: get_temp_dir(&config.set_version, "webview").unwrap_or_println(),
-        backend_in: Mutex::new(backend.get_stdin()),
-        backend_out: Mutex::new(backend.get_stdout()),
-        backend_err: Mutex::new(backend.get_stderr()),
-        backend: Mutex::new(backend),
+        backend: backend,
     })
 }

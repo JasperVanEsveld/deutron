@@ -17,7 +17,7 @@ static PREFIX: &str = "DEUTRON_IPC:";
 
 pub fn listen_backendout(proxy: EventLoopProxy<WebViewAction>) {
     thread::spawn(move || {
-        let mut backend_out = STATE.backend_out.lock().unwrap();
+        let mut backend_out = STATE.backend.stdout.lock().unwrap();
         for line_result in backend_out.by_ref().lines() {
             let mut line = unwrap_log!(line_result);
             if !line.starts_with(PREFIX) {
@@ -37,7 +37,7 @@ pub fn listen_backendout(proxy: EventLoopProxy<WebViewAction>) {
 
 pub fn listen_backenderr(proxy: EventLoopProxy<WebViewAction>) {
     thread::spawn(move || {
-        let mut backend_out = STATE.backend_err.lock().unwrap();
+        let mut backend_out = STATE.backend.stderr.lock().unwrap();
         for line_result in backend_out.by_ref().lines() {
             let mut line = unwrap_log!(line_result);
             if !line.starts_with(PREFIX) {
@@ -56,7 +56,7 @@ pub fn listen_backenderr(proxy: EventLoopProxy<WebViewAction>) {
 }
 
 pub fn send_backendin(message: String) -> Result<()> {
-    let mut backend_in = STATE.backend_in.lock().unwrap();
+    let mut backend_in = STATE.backend.stdin.lock().unwrap();
 
     if STATE.verbose {
         println!("Backend <- {}", message);

@@ -2,7 +2,7 @@ use crate::state::STATE;
 use std::panic;
 
 pub fn cleanup_backend() {
-    STATE.backend.lock().unwrap().process.kill().ok().unwrap();
+    STATE.backend.exit();
 }
 
 pub fn cleanup_onexit() {
