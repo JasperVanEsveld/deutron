@@ -5,7 +5,6 @@ Uses std-in/out for communication, allowing it to easily be used by any programm
 
 ## Usage
 
-
 To create your first application just call `deutron` followed by your backend command.
 ```shell
 deutron your backend command
