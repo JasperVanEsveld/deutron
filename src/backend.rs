@@ -32,7 +32,7 @@ impl Backend {
             .spawn()
             .expect("Failed to start the backend");
         #[cfg(not(windows))]
-        let process = Command::new(&command[0])
+        let mut process = Command::new(&command[0])
             .args(&command[1..])
             .current_dir(cwd)
             .stdin(Stdio::piped())
